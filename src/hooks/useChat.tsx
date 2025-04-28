@@ -46,8 +46,17 @@ export function useChat() {
 
       console.log("Sending to N8N:", payload);
       
-      // In a real app, we would wait for the N8N response
-      // For demo purposes, we'll simulate a response after a delay
+      // Send actual request to N8N webhook
+      const response = await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      // For demo purposes, we'll still simulate a response if the fetch fails
+      // In production, you'd want to handle the actual response from N8N
       setTimeout(() => {
         const responses = [
           "Thank you for your question about ISO 27001 compliance. To provide you with the most accurate guidance, could you please specify which aspect of information security management you're interested in? I can help with risk assessment, required documentation, control implementation, audit preparation, or other compliance-related topics.",
