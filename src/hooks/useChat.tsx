@@ -55,28 +55,60 @@ export function useChat() {
         body: JSON.stringify(payload),
       });
 
-      // For demo purposes, we'll still simulate a response if the fetch fails
-      // In production, you'd want to handle the actual response from N8N
-      setTimeout(() => {
-        const responses = [
-          "Thank you for your question about ISO 27001 compliance. To provide you with the most accurate guidance, could you please specify which aspect of information security management you're interested in? I can help with risk assessment, required documentation, control implementation, audit preparation, or other compliance-related topics.",
-          "Based on your query, I'd recommend starting with a comprehensive risk assessment as outlined in ISO 27001 section 6.1. This process involves identifying assets, threats, vulnerabilities, and implementing appropriate controls.",
-          "When preparing for an ISO 27001 audit, ensure you have documented evidence of risk assessments, security policies, control implementations, and incident management procedures. Would you like me to provide a detailed checklist for audit preparation?",
-          "For ISO 27001 certification, you'll need several mandatory documents including the scope of the ISMS, information security policy, risk assessment methodology, Statement of Applicability (SoA), and various security procedures. Can I provide more details on any specific document?"
-        ];
-        
-        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-        
-        const assistantMessage: Message = {
-          id: uuidv4(),
-          role: 'assistant',
-          content: randomResponse,
-          timestamp: new Date(),
-        };
-        
-        setMessages((prev) => [...prev, assistantMessage]);
-        setIsLoading(false);
-      }, 2000);
+      console.log("N8N response status:", response.status);
+
+      // Process the N8N response
+      try {
+        // Try to parse the response JSON
+        const responseData = await response.json();
+        console.log("N8N response data:", responseData);
+
+        // Extract the message content from the response
+        // Adjust this based on the actual structure of the N8N response
+        const assistantContent = responseData.message || responseData.content || responseData.response;
+
+        if (assistantContent) {
+          // Create assistant message with content from N8N
+          const assistantMessage: Message = {
+            id: uuidv4(),
+            role: 'assistant',
+            content: assistantContent,
+            timestamp: new Date(),
+          };
+          
+          setMessages((prev) => [...prev, assistantMessage]);
+          setIsLoading(false);
+          return; // Exit early as we've already added the message
+        } else {
+          console.warn("N8N response doesn't contain expected message content:", responseData);
+        }
+      } catch (parseError) {
+        console.error("Error parsing N8N response:", parseError);
+        toast({
+          title: 'Warning',
+          description: 'Received an invalid response format from N8N. Using fallback response.',
+        });
+      }
+
+      // Fallback mechanism if N8N response couldn't be processed correctly
+      const fallbackResponses = [
+        "Thank you for your question about ISO 27001 compliance. To provide you with the most accurate guidance, could you please specify which aspect of information security management you're interested in? I can help with risk assessment, required documentation, control implementation, audit preparation, or other compliance-related topics.",
+        "Based on your query, I'd recommend starting with a comprehensive risk assessment as outlined in ISO 27001 section 6.1. This process involves identifying assets, threats, vulnerabilities, and implementing appropriate controls.",
+        "When preparing for an ISO 27001 audit, ensure you have documented evidence of risk assessments, security policies, control implementations, and incident management procedures. Would you like me to provide a detailed checklist for audit preparation?",
+        "For ISO 27001 certification, you'll need several mandatory documents including the scope of the ISMS, information security policy, risk assessment methodology, Statement of Applicability (SoA), and various security procedures. Can I provide more details on any specific document?"
+      ];
+      
+      const fallbackResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+      
+      const assistantMessage: Message = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: fallbackResponse,
+        timestamp: new Date(),
+      };
+      
+      setMessages((prev) => [...prev, assistantMessage]);
+      setIsLoading(false);
 
     } catch (error) {
       console.error('Error sending message:', error);
